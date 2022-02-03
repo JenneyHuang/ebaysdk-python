@@ -12,9 +12,10 @@ import re
 import time
 import uuid
 import webbrowser
+import ssl
 
 from requests import Request, Session
-from requests.adapters import HTTPAdapter
+from requests.adapters import HTTPAdapter, PoolManager
 
 from xml.dom.minidom import parseString
 from xml.parsers.expat import ExpatError
@@ -30,6 +31,9 @@ HTTP_SSL = {
     True: 'https',
 }
 
+class MyAdapter(HTTPAdapter):
+    def init_poolmanager(self, connections, maxsize, block=False, **pool_kwargs):
+         self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize, block=block,ssl_version=ssl.PROTOCOL_TLSv1_2)
 
 class BaseConnection(object):
     """Base Connection Class."""
@@ -63,8 +67,8 @@ class BaseConnection(object):
             }
 
         self.session = Session()
-        self.session.mount('http://', HTTPAdapter(max_retries=3))
-        self.session.mount('https://', HTTPAdapter(max_retries=3))
+        self.session.mount('http://', MyAdapter(max_retries=3))
+        self.session.mount('https://', MyAdapter(max_retries=3))
 
         self.parallel = parallel
 
